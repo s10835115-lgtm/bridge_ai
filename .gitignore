@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment files
+*.env
+backend/.env
+
+# Python virtual environments
+backend/venv/
+venv/
+
+# Data directories
+DATA_Maguire_20180517_ALL/
+
+# OS files
+.DS_Store
+
+# IDE/editor files
+.vscode/
+.idea/
+
+# Build/dist
+build/
+dist/
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.swp

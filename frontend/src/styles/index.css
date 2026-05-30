@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-slate-200 font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden;
+  }
+  
+  .neon-text-cyan {
+    @apply text-accent-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.5)];
+  }
+
+  .neon-border-cyan {
+    @apply border border-accent-cyan/30 shadow-neon-cyan;
+  }
+
+  .btn-primary {
+    @apply bg-accent-gradient text-white font-bold py-2 px-6 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-neon-blue;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-accent-cyan/30 transition-colors;
+}
+
+/* Grid Overlay */
+.bg-grid-overlay {
+  background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+}
