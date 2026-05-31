@@ -23,14 +23,6 @@ This repository includes two main applications:
    - Dashboard pages for inspections, analytics, and reports
    - Axios-powered API communication
 
-## Key Features
-
-- Automatic crack detection from uploaded images
-- Severity scoring and heatmap generation
-- PDF report generation for structural inspections
-- JWT-secured API routes
-- Dashboard analytics and inspection management
-
 ## Folder Structure
 
 ```text
@@ -39,20 +31,41 @@ frontend/       # React UI and client-side application
 DATA_Maguire_20180517_ALL/  # Source datasets for model training
 ```
 
-## Getting Started
+## Prerequisites
 
-### Backend Setup
+- macOS / Linux / Windows with WSL
+- Python 3.12+ for backend
+- Node.js 18+ and npm for frontend
+- Git for repository management
+- Optional: MySQL server for production database
+
+## Complete Setup
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/s10835115-lgtm/bridge_ai.git
+cd bridge_ai
+```
+
+### 2. Backend Setup
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-#### Configure Environment
+> If you use Windows PowerShell:
+> ```powershell
+> .\.venv\Scripts\Activate.ps1
+> ```
 
-Create a `.env` file in `backend/` with the following values:
+#### Create `.env`
+
+In `backend/`, create a `.env` file with:
 
 ```env
 OPENAI_API_KEY=your_openai_api_key
@@ -61,26 +74,25 @@ FLASK_ENV=development
 JWT_SECRET_KEY=your_secret_key
 ```
 
-#### Run Backend
+#### Start the backend server
 
 ```bash
-./venv/bin/python run.py
-```
-
-If you activate the environment first, you can also use:
-
-```bash
+cd backend
 source .venv/bin/activate
 python run.py
 ```
 
-The backend server starts on `http://0.0.0.0:5001` (and `http://127.0.0.1:5001`) by default.
+Or from the repo root:
 
-> Note: the API requires user registration before login. If you call protected routes such as `/api/upload` or `/api/auth/login` without valid credentials, the server returns `401 Unauthorized`.
->
-> If OpenAI quota is exhausted, report generation may still return a JSON error message from the GPT API.
+```bash
+./backend/.venv/bin/python backend/run.py
+```
 
-### Frontend Setup
+The backend listens on:
+- `http://127.0.0.1:5001`
+- `http://0.0.0.0:5001`
+
+### 3. Frontend Setup
 
 ```bash
 cd frontend
@@ -88,37 +100,49 @@ npm install
 npm run dev
 ```
 
-Open the local Vite development URL shown in the terminal (typically `http://localhost:5173`).
+Open the Vite URL shown in the terminal, typically:
+- `http://localhost:5173`
 
-## Available Commands
+### 4. Run Both Apps Together
+
+- Start backend first
+- Start frontend second
+- Use the frontend dashboard to access camera upload, inspection, and reports
+
+## Useful Commands
 
 ### Backend
-- `python run.py` — start Flask backend
-- `pytest` — run backend tests from `backend/test_*` files
+- `source backend/.venv/bin/activate` — activate backend virtual environment
+- `pip install -r backend/requirements.txt` — install backend dependencies
+- `python backend/run.py` — run backend server
+- `pytest backend` — run backend tests
 
 ### Frontend
+- `cd frontend`
+- `npm install`
 - `npm run dev` — start development server
-- `npm run build` — build production bundle
-- `npm run preview` — preview production build
+- `npm run build` — build production assets
+- `npm run preview` — preview built frontend
 
-## Testing
+## Git Notes
 
-Run backend tests from the repository root or inside `backend/`:
+- The repo remote is already configured to `https://github.com/s10835115-lgtm/bridge_ai.git`
+- Keep generated folders out of Git:
+  - `backend/.venv/`
+  - `frontend/node_modules/`
+  - `frontend/dist/`
+- The `.gitignore` file excludes local virtualenvs, node modules, and OS artifacts.
 
-```bash
-cd backend
-pytest
-```
+## Troubleshooting
 
-## Notes
+- If `tensorflow.keras.applications` cannot be resolved, ensure the backend venv is active and `tensorflow` is installed in that environment.
+- If the frontend camera page does not load, confirm the backend is running and the browser is allowed to access the webcam.
+- If `npm run dev` fails, delete `frontend/node_modules/` and rerun `npm install`.
 
-- The backend includes TensorFlow model loading and OpenCV preprocessing.
-- The frontend uses React 19, Tailwind CSS, and Recharts for analytics visualization.
-- For production, use a proper database service and secure JWT secret management.
+## Additional Documentation
 
-## Related Documentation
-
-- See `backend/README.md` for backend-specific architecture and API details.
+- See `backend/README.md` for backend architecture, API route details, and report generation information.
+- See `frontend/` source files for UI pages, camera integration, and dashboard routes.
 
 ## License
 
