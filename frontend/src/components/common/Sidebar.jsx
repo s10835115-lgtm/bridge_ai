@@ -42,7 +42,7 @@ const Sidebar = () => {
               exit={{ opacity: 0, x: -20 }}
               className="font-heading font-bold text-xl tracking-tight text-white whitespace-nowrap"
             >
-              Bridge<span className="text-accent-cyan">AI</span>
+              Crack<span className="text-accent-cyan">Ai</span>
             </motion.span>
           )}
         </AnimatePresence>

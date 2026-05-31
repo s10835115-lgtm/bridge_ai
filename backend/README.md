@@ -1,4 +1,4 @@
-# BridgeAI - Smart Crack Detection Backend
+# CrackAI - Smart Crack Detection Backend
 
 Production-quality Flask backend for the Generative AI Based Smart Crack Detection and Predictive Maintenance for Bridges project.
 

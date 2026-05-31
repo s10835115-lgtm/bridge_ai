@@ -70,8 +70,8 @@ const ReportDetailModal = ({ report, onClose }) => {
                   <span className="text-xl font-bold text-white">{report.crack_width || 'N/A'}</span>
                 </div>
                 <div className="glass-card p-4">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">AI Confidence</span>
-                  <span className="text-xl font-bold text-accent-cyan">{report.confidence}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Risk Level</span>
+                  <span className="text-xl font-bold text-accent-cyan">{report.risk_level || 'N/A'}/100</span>
                 </div>
               </div>
             </div>
@@ -196,7 +196,6 @@ const Reports = () => {
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">ID</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Bridge Name</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Severity</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Confidence</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
                   <th className="px-6 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
                 </tr>
@@ -220,7 +219,6 @@ const Reports = () => {
                         {report.severity}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-accent-cyan font-mono">{report.confidence}</td>
                     <td className="px-6 py-4 text-xs text-slate-500 font-mono">{new Date(report.created_at).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-right">
                       <button 
@@ -234,7 +232,7 @@ const Reports = () => {
                 ))}
                 {filteredReports.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="px-6 py-20 text-center text-slate-500 italic">No matching reports found in the neural archives.</td>
+                    <td colSpan="5" className="px-6 py-20 text-center text-slate-500 italic">No matching reports found in the neural archives.</td>
                   </tr>
                 )}
               </tbody>

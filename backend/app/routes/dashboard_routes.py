@@ -11,13 +11,11 @@ dashboard_bp = Blueprint('dashboard', __name__)
 def get_stats():
     total_inspections = Inspection.query.count()
     critical_cracks = Inspection.query.filter_by(severity='Critical').count()
-    avg_confidence = db.session.query(func.avg(Inspection.confidence)).scalar() or 0
     active_alerts = Inspection.query.filter(Inspection.status != 'Completed').count()
     
     return format_response(True, "Dashboard stats retrieved", data={
         "total_inspections": total_inspections,
         "critical_cracks": critical_cracks,
-        "avg_confidence": round(float(avg_confidence), 2),
         "active_alerts": active_alerts
     })
 

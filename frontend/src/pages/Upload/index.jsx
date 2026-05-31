@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Upload as UploadIcon, 
@@ -13,7 +13,8 @@ import {
   Zap,
   Brain,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react'
 import { 
   ResponsiveContainer, 
@@ -64,7 +65,7 @@ const AIProcessingLoader = ({ status }) => {
   )
 }
 
-const SeverityVisualization = ({ severity, confidence, riskLevel }) => {
+const SeverityVisualization = ({ severity, riskLevel }) => {
   const data = [{ name: 'Risk', value: riskLevel || 15 }]
   const COLORS = severity === 'Critical' ? ['#ef4444'] : severity === 'Moderate' ? ['#f59e0b'] : ['#10b981']
 
@@ -99,7 +100,7 @@ const SeverityVisualization = ({ severity, confidence, riskLevel }) => {
           <span className={`text-2xl font-bold ${
             severity === 'Critical' ? 'text-critical' : severity === 'Moderate' ? 'text-warning' : 'text-success'
           }`}>{severity}</span>
-          <span className="text-[10px] text-slate-500 font-mono">CONF_{confidence}%</span>
+          <span className="text-[10px] text-slate-500 font-mono">RISK_{riskLevel || 'N/A'}</span>
         </div>
       </div>
     </div>
@@ -153,15 +154,235 @@ const Upload = () => {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [reportUrl, setReportUrl] = useState(null)
   const [error, setError] = useState(null)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [cameraError, setCameraError] = useState(null)
+  const [cameraReady, setCameraReady] = useState(false)
+  const [stream, setStream] = useState(null)
+  const [devices, setDevices] = useState([])
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null)
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const cameraInitTimeoutRef = useRef(null)
+
+  const listVideoDevices = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return
+      const all = await navigator.mediaDevices.enumerateDevices()
+      const vids = all.filter((d) => d.kind === 'videoinput')
+      console.log('Video devices:', vids)
+      setDevices(vids)
+      if (vids.length && !selectedDeviceId) setSelectedDeviceId(vids[0].deviceId)
+    } catch (err) {
+      console.error('enumerateDevices failed', err)
+    }
+  }
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
     if (selectedFile) {
+      if (stream) {
+        stopCamera()
+      }
       setRawFile(selectedFile)
       setFile(URL.createObjectURL(selectedFile))
       setError(null)
     }
   }
+
+  const startCamera = async () => {
+    setCameraError(null)
+    setCameraReady(false)
+    try {
+      console.log('startCamera: checking permissions and devices')
+      // log permission state if available
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          navigator.permissions.query({ name: 'camera' }).then((p) => console.log('camera permission state:', p.state)).catch(() => {})
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      await listVideoDevices()
+
+      const constraints = selectedDeviceId
+        ? { video: { deviceId: { exact: selectedDeviceId } } }
+        : { video: true }
+
+      console.log('startCamera: requesting getUserMedia with constraints', constraints)
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      console.log('startCamera: received stream', mediaStream)
+      // stop previous stream
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop())
+      }
+      setStream(mediaStream)
+      setCameraActive(true)
+
+      // The actual attachment to the video element happens in the camera lifecycle effect below.
+      if (!videoRef.current) {
+        console.log('startCamera: videoRef.current is not attached yet, stream will attach after render')
+      }
+    } catch (err) {
+      console.error('Camera error:', err)
+      // Map common error names to friendly messages
+      let friendly = 'Unable to access camera. Please allow camera permissions and try again.'
+      if (err && err.name) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          friendly = 'Camera permission denied. Please allow camera access in your browser.'
+        } else if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
+          friendly = 'No camera found. Connect a camera or try another device.'
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          friendly = 'Camera is already in use by another application.'
+        } else {
+          friendly = `Camera error: ${err.message || err.name}`
+        }
+      }
+      setCameraError(friendly)
+      setCameraActive(false)
+    }
+  }
+
+  const handleVideoReady = () => {
+    console.log('handleVideoReady: video loadedmetadata/canplay event')
+    if (videoRef.current && videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
+      console.log('handleVideoReady: video dimensions', videoRef.current.videoWidth, videoRef.current.videoHeight)
+      if (cameraInitTimeoutRef.current) {
+        clearTimeout(cameraInitTimeoutRef.current)
+        cameraInitTimeoutRef.current = null
+      }
+      setCameraReady(true)
+      setCameraError(null)
+    }
+  }
+
+  useEffect(() => {
+    if (!cameraActive || !stream) return
+    if (!videoRef.current) {
+      console.log('cameraEffect: waiting for videoRef to attach')
+      return
+    }
+
+    try {
+      console.log('cameraEffect: attaching stream to video element', videoRef.current)
+      videoRef.current.srcObject = stream
+      videoRef.current.onloadedmetadata = () => {
+        console.log('cameraEffect: video onloadedmetadata')
+        try {
+          const playPromise = videoRef.current.play()
+          if (playPromise && playPromise.then) {
+            playPromise.then(() => console.log('cameraEffect: video.play() succeeded')).catch((e) => console.warn('cameraEffect: video.play() rejected', e))
+          }
+        } catch (err) {
+          console.warn('cameraEffect: video.play() threw', err)
+        }
+      }
+      videoRef.current.oncanplay = () => {
+        console.log('cameraEffect: video oncanplay')
+      }
+      videoRef.current.onplaying = () => {
+        console.log('cameraEffect: video onplaying')
+        setCameraReady(true)
+        setCameraError(null)
+      }
+    } catch (err) {
+      console.error('cameraEffect: could not attach stream to video', err)
+      setCameraError('Unable to attach the camera stream. Please refresh and try again.')
+    }
+  }, [cameraActive, stream])
+
+  const stopCamera = () => {
+    console.log('stopCamera: stopping stream')
+    if (cameraInitTimeoutRef.current) {
+      clearTimeout(cameraInitTimeoutRef.current)
+      cameraInitTimeoutRef.current = null
+    }
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop())
+      setStream(null)
+    }
+    // clear video element src to fully release
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause()
+      } catch (e) {}
+      try {
+        videoRef.current.srcObject = null
+      } catch (e) {}
+    }
+    setCameraActive(false)
+  }
+
+  const captureFromCamera = async () => {
+    if (!videoRef.current) {
+      setError('Camera reference not found.')
+      return
+    }
+    
+    const video = videoRef.current
+    
+    // Check if video has dimensions, with small retry
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      // Wait 500ms and try again
+      await new Promise(resolve => setTimeout(resolve, 500))
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        setError('Camera stream not ready. Please try again.')
+        return
+      }
+    }
+
+    try {
+      console.log('captureFromCamera: capturing frame', { videoWidth: video.videoWidth, videoHeight: video.videoHeight })
+      const canvas = canvasRef.current || document.createElement('canvas')
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        setError('Unable to get canvas context.')
+        return
+      }
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setError('Failed to convert image. Please try again.')
+          return
+        }
+        const capturedFile = new File([blob], `camera-capture-${Date.now()}.png`, { type: 'image/png' })
+        setRawFile(capturedFile)
+        setFile(URL.createObjectURL(capturedFile))
+        setError(null)
+        console.log('captureFromCamera: capture saved, stopping camera')
+        stopCamera()
+        setCameraReady(false)
+      }, 'image/png', 0.95)
+    } catch (err) {
+      console.error('Capture error:', err)
+      setError(`Capture failed: ${err.message}`)
+    }
+  }
+
+  useEffect(() => {
+    // list devices on mount and when permissions change
+    listVideoDevices()
+    // best-effort devicechange listener
+    const onChange = () => listVideoDevices()
+    navigator.mediaDevices?.addEventListener?.('devicechange', onChange)
+    return () => navigator.mediaDevices?.removeEventListener?.('devicechange', onChange)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (cameraInitTimeoutRef.current) {
+        clearTimeout(cameraInitTimeoutRef.current)
+      }
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop())
+      }
+    }
+  }, [stream])
 
   const startAnalysis = async () => {
     if (!rawFile) return;
@@ -270,17 +491,109 @@ const Upload = () => {
           </div>
 
           <div className="glass-card relative p-12 flex flex-col items-center justify-center border-dashed border-2 border-accent-cyan/20 group hover:border-accent-cyan/50 transition-all bg-white/[0.02]">
-            {!file && (
-              <input 
-                id="inspection-upload"
-                name="inspection-upload"
-                type="file" 
-                className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                onChange={handleFileChange}
-                accept="image/png,image/jpeg,image/jpg,image/webp,image/avif"
-              />
+            {!file && !cameraActive && (
+              <>
+                <input 
+                  id="inspection-upload"
+                  name="inspection-upload"
+                  type="file" 
+                  className="absolute inset-0 opacity-0 cursor-pointer z-0" 
+                  onChange={handleFileChange}
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/avif"
+                />
+                <div className="space-y-6 text-center relative z-10">
+                  <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center text-accent-cyan mx-auto group-hover:bg-accent-cyan group-hover:text-black transition-all shadow-neon-cyan">
+                    <UploadIcon size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-white tracking-tight">Drop Inspection Imagery or use your webcam</h3>
+                  <p className="text-slate-500 text-sm">Supported formats: JPG, PNG, JPEG, WEBP, AVIF</p>
+                  <div className="flex items-center justify-center gap-3">
+                    {devices && devices.length > 0 && (
+                      <select
+                        value={selectedDeviceId || ''}
+                        onChange={(e) => setSelectedDeviceId(e.target.value || null)}
+                        className="bg-background/50 border border-white/10 rounded px-3 py-2 text-white"
+                      >
+                        {devices.map((d) => (
+                          <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${d.deviceId}`}</option>
+                        ))}
+                        <option value="">Use environment-facing camera</option>
+                      </select>
+                    )}
+
+                    <button
+                      onClick={startCamera}
+                      type="button"
+                      className="btn-primary px-6 py-3 text-sm relative z-20"
+                    >
+                      OPEN WEBCAM
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
-            {file ? (
+
+            {cameraActive && (
+              <div className="space-y-6 text-center w-full">
+                <div className="relative">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    onLoadedMetadata={(e) => {
+                      console.log('video event: loadedmetadata', e)
+                      handleVideoReady()
+                    }}
+                    onCanPlay={(e) => {
+                      console.log('video event: canplay', e)
+                      handleVideoReady()
+                    }}
+                    onPlaying={(e) => {
+                      console.log('video event: playing', e)
+                      setCameraReady(true)
+                      setCameraError(null)
+                    }}
+                    className="mx-auto rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl h-[360px] object-cover"
+                  />
+                  {!cameraReady && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-2xl">
+                      <div className="text-center">
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          className="w-12 h-12 rounded-full border-2 border-accent-cyan border-r-transparent mx-auto mb-3"
+                        />
+                        <p className="text-sm text-accent-cyan font-bold">Initializing Camera...</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {cameraError && (
+                  <p className="text-sm text-critical">{cameraError}</p>
+                )}
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <button
+                    onClick={captureFromCamera}
+                    disabled={!cameraReady}
+                    type="button"
+                    className="btn-primary px-6 py-3 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    CAPTURE PHOTO
+                  </button>
+                  <button
+                    onClick={stopCamera}
+                    type="button"
+                    className="glass-card px-6 py-3 text-white font-bold hover:bg-white/5 transition-all"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+                <canvas ref={canvasRef} className="hidden" />
+              </div>
+            )}
+
+            {file && (
               <div className="space-y-6 text-center relative z-20">
                 <SafeImage 
                   src={file} 
@@ -302,14 +615,6 @@ const Upload = () => {
                     START AI ANALYSIS <Activity size={18} />
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-6 text-center">
-                <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center text-accent-cyan mx-auto group-hover:bg-accent-cyan group-hover:text-black transition-all shadow-neon-cyan">
-                  <UploadIcon size={32} />
-                </div>
-                <h3 className="text-xl font-bold text-white tracking-tight">Drop Inspection Imagery</h3>
-                <p className="text-slate-500 text-sm">Supported formats: JPG, PNG, JPEG</p>
               </div>
             )}
           </div>
@@ -361,8 +666,8 @@ const Upload = () => {
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="glass-card p-4 group hover:border-accent-cyan/30 transition-all">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Confidence</span>
-                    <p className="text-xl font-bold text-white">{analysisResult?.confidence}%</p>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Risk Level</span>
+                    <p className="text-xl font-bold text-white">{analysisResult?.risk_level || 'N/A'}/100</p>
                   </div>
                   <div className="glass-card p-4 group hover:border-accent-cyan/30 transition-all">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Crack Count</span>
@@ -374,7 +679,6 @@ const Upload = () => {
               <div className="space-y-8">
                 <SeverityVisualization 
                   severity={analysisResult?.severity} 
-                  confidence={analysisResult?.confidence}
                   riskLevel={analysisResult?.risk_level}
                 />
                 <GPTRecommendation analysis={analysisResult} />

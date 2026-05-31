@@ -20,7 +20,12 @@ try:
 except:
     pass
 import numpy as np
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+try:
+    from tensorflow.keras.applications import mobilenet_v2
+    preprocess_input = mobilenet_v2.preprocess_input
+except ImportError:
+    from keras.applications import mobilenet_v2
+    preprocess_input = mobilenet_v2.preprocess_input
 
 def test_image(image_path):
     model_path = os.path.join(os.path.dirname(__file__), 'backend/ai/models/crack_detector.h5')

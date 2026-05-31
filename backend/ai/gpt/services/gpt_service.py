@@ -15,7 +15,7 @@ class GPTService:
         else:
             print("Warning: OPENAI_API_KEY not found in environment.")
 
-    def generate_maintenance_report(self, bridge_name, severity, confidence, crack_width, crack_length, risk_level, geometry=None):
+    def generate_maintenance_report(self, bridge_name, severity, crack_width, crack_length, risk_level, geometry=None):
         """
         Calls OpenAI to generate a professional maintenance report based on AI findings.
         """
@@ -25,7 +25,7 @@ class GPTService:
 
         try:
             prompt = get_maintenance_prompt(
-                bridge_name, severity, confidence, 
+                bridge_name, severity,
                 crack_width, crack_length, risk_level,
                 geometry=geometry
             )

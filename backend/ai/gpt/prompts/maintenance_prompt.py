@@ -1,4 +1,4 @@
-def get_maintenance_prompt(bridge_name, severity, confidence, crack_width, crack_length, risk_level, geometry=None):
+def get_maintenance_prompt(bridge_name, severity, crack_width, crack_length, risk_level, geometry=None):
     geometry_info = ""
     if geometry:
         geometry_info = f"""
@@ -15,14 +15,13 @@ def get_maintenance_prompt(bridge_name, severity, confidence, crack_width, crack
 
     ### DATA:
     - Detected Severity: {severity}
-    - AI Confidence Score: {confidence}%
     - Measured Crack Width: {crack_width}
     - Measured Crack Length: {crack_length}
     - Calculated Risk Level: {risk_level}/100
     {geometry_info}
 
     ### TASK:
-    1. Provide a professional engineering summary of the structural health, considering both neural confidence and physical geometry.
+    1. Provide a professional engineering summary of the structural health, considering physical geometry and structural risk.
     2. Generate specific maintenance recommendations (e.g., Epoxy Injection, Carbon Fiber Reinforcement, or Replacement).
     3. Determine the urgency level (Immediate, Scheduled, Routine).
     4. Provide a critical safety warning if the geometry indicates deep fractures (high width/length).

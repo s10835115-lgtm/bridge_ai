@@ -102,12 +102,12 @@ const Dashboard = () => {
       data: [{val: 5}, {val: 4}, {val: 6}, {val: 4}] 
     },
     { 
-      label: 'AI Confidence', 
-      value: `${statsData?.avg_confidence || 0}%`, 
+      label: 'Alert Pressure', 
+      value: statsData?.active_alerts || '0', 
       icon: Brain, 
       color: 'text-accent-blue', 
-      trend: 'Avg', 
-      data: [{val: 95}, {val: 98}, {val: 97}, {val: 98}] 
+      trend: 'High', 
+      data: [{val: 60}, {val: 72}, {val: 68}, {val: 75}] 
     },
     { 
       label: 'Active Alerts', 
@@ -285,7 +285,7 @@ const Dashboard = () => {
                     <p className="text-xs font-bold text-white">{item.bridge_name}</p>
                     <p className="text-[10px] font-mono text-slate-500">{new Date(item.created_at).toLocaleTimeString()}</p>
                   </div>
-                  <p className="text-[10px] text-slate-400">Severity: {item.severity} • Confidence: {item.confidence}</p>
+                  <p className="text-[10px] text-slate-400">Severity: {item.severity} • Risk: {item.risk_level || 'N/A'}/100</p>
                 </div>
               </div>
             )) : (

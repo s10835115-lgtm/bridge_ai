@@ -268,7 +268,7 @@ const Footer = () => (
             <div className="w-10 h-10 bg-accent-gradient rounded-xl flex items-center justify-center shadow-neon-blue">
               <Activity className="text-white" size={24} />
             </div>
-            <span className="font-heading font-bold text-2xl text-white">Bridge<span className="text-accent-cyan">AI</span></span>
+            <span className="font-heading font-bold text-2xl text-white">Crack<span className="text-accent-cyan">Ai</span></span>
           </div>
           <p className="text-slate-500 max-w-sm leading-relaxed">
             Leading the future of structural infrastructure through generative artificial intelligence and autonomous monitoring systems.
@@ -293,7 +293,7 @@ const Footer = () => (
         </div>
       </div>
       <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-        <p className="text-slate-600 text-xs">© 2026 BridgeAI Systems. Production-quality AI Laboratory Project.</p>
+        <p className="text-slate-600 text-xs">© 2026 CrackAI Systems. Production-quality AI Laboratory Project.</p>
         <div className="flex gap-8 text-slate-600 text-xs font-bold tracking-widest uppercase">
           <span>Terms</span>
           <span>Privacy</span>

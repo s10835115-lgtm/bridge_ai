@@ -36,12 +36,12 @@ def upload_image():
     try:
         # Standardize on 'predict' method
         ai_results = ai_engine.predict(upload_path)
-        
+
         # If the file was converted, we want to use the converted image's filename 
         # for database record to ensure Grad-CAM and display works perfectly
         if upload_path != original_upload_path:
             filename = os.path.basename(upload_path)
-        
+
         # 3. Create initial inspection record
         inspection = Inspection(
             bridge_name="New Bridge Inspection",
@@ -58,43 +58,18 @@ def upload_image():
         db.session.add(inspection)
         db.session.commit()
 
-        # 4. Prepare response data
+        # 4. Prepare response data without exposing raw confidence values
+        ai_results_sanitized = {k: v for k, v in ai_results.items() if k != 'confidence'}
         response_data = {
             "inspection_id": inspection.id,
             "image_path": filename,
-            "ai_analysis": ai_results
+            "ai_analysis": ai_results_sanitized
         }
-        
-        return format_response(True, "AI Analysis complete", data=response_data)
-    except Exception as e:
-        import traceback
-        print(f"AI Error Traceback: {traceback.format_exc()}")
-        return format_response(False, f"AI Processing Error: {str(e)}", status_code=500)
 
-@inspection_bp.route('/inspections', methods=['POST'])
-@jwt_required()
-def create_inspection():
-    data = request.get_json()
-    
-    required_fields = ['bridge_name', 'image_path', 'severity', 'confidence']
-    if not all(field in data for field in required_fields):
-        return format_response(False, "Missing required fields", status_code=400)
-    
-    inspection = Inspection(
-        bridge_name=data['bridge_name'],
-        image_path=data['image_path'],
-        severity=data['severity'],
-        confidence=data['confidence'],
-        crack_width=data.get('crack_width'),
-        crack_length=data.get('crack_length'),
-        risk_level=data.get('risk_level'),
-        status=data.get('status', 'Pending')
-    )
-    
-    db.session.add(inspection)
-    db.session.commit()
-    
-    return format_response(True, "Inspection created successfully", data=inspection.to_dict(), status_code=201)
+        return format_response(True, "Inspection created successfully", data=response_data, status_code=201)
+    except Exception as e:
+        current_app.logger.exception("Error processing uploaded image")
+        return format_response(False, "Failed to process the inspection image", status_code=500)
 
 @inspection_bp.route('/inspections', methods=['GET'])
 @jwt_required()

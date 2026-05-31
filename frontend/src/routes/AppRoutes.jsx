@@ -8,6 +8,7 @@ import Analytics from '../pages/Analytics'
 import Settings from '../pages/Settings'
 import Login from '../pages/Auth/Login'
 import Register from '../pages/Auth/Register'
+import CameraTest from '../pages/CameraTest'
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -24,6 +25,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/camera-test" element={<CameraTest />} />
 
       {/* Protected App Routes */}
       <Route element={

@@ -18,7 +18,6 @@ def get_ai_recommendation(inspection_id):
     ai_results = gpt_service.generate_maintenance_report(
         bridge_name=inspection.bridge_name,
         severity=inspection.severity,
-        confidence=inspection.confidence,
         crack_width=inspection.crack_width,
         crack_length=inspection.crack_length,
         risk_level=inspection.risk_level,
@@ -41,7 +40,6 @@ def generate_ai_report(inspection_id):
     ai_analysis = gpt_service.generate_maintenance_report(
         bridge_name=inspection.bridge_name,
         severity=inspection.severity,
-        confidence=inspection.confidence,
         crack_width=inspection.crack_width,
         crack_length=inspection.crack_length,
         risk_level=inspection.risk_level,
@@ -61,7 +59,6 @@ def generate_ai_report(inspection_id):
         "inspection_id": f"INS-{inspection.id}",
         "bridge_name": inspection.bridge_name,
         "severity": inspection.severity,
-        "confidence": inspection.confidence,
         "crack_width": inspection.crack_width,
         "crack_length": inspection.crack_length,
         "risk_level": inspection.risk_level,

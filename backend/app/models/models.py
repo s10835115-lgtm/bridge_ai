@@ -57,7 +57,6 @@ class Inspection(db.Model):
             'bridge_name': self.bridge_name,
             'image_path': self.image_path,
             'severity': self.severity,
-            'confidence': f"{self.confidence}%",
             'crack_width': self.crack_width,
             'crack_length': self.crack_length,
             'risk_level': self.risk_level,
